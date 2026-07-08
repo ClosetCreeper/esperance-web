@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --border: #E4E1D8;
+  --text: #201F1B;
+  --text-muted: #726F63;
+  --accent: #3E6259;
+  --accent-soft: #E7EEE9;
+  --danger: #B54B3A;
+  --danger-soft: #F5E7E3;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(32, 31, 27, 0.04), 0 2px 8px rgba(32, 31, 27, 0.04);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.display {
+  font-family: 'Fraunces', serif;
+  letter-spacing: -0.01em;
+}
+
+/* Focus states — keyboard accessibility */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
