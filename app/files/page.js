@@ -65,16 +65,34 @@ export default function FilesPage() {
     setCurrentPath(crumbs.slice(0, index + 1).join('/'));
   }
 
+  const [uploading, setUploading] = useState(false);
+
   async function handleUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      await api.upload(joinPath(currentPath, file.name), file);
-      load(currentPath);
-    } catch (err) {
-      setError('Upload failed. Try again.');
-    } finally {
-      e.target.value = '';
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setError('');
+    let failCount = 0;
+
+    for (const file of files) {
+      try {
+        await api.upload(joinPath(currentPath, file.name), file);
+      } catch (err) {
+        failCount++;
+      }
+    }
+
+    setUploading(false);
+    e.target.value = '';
+    load(currentPath);
+
+    if (failCount > 0) {
+      setError(
+        failCount === files.length
+          ? 'Upload failed for all files. Try again.'
+          : `${failCount} of ${files.length} file${files.length > 1 ? 's' : ''} failed to upload.`
+      );
     }
   }
 
@@ -161,10 +179,10 @@ export default function FilesPage() {
 
         {/* Toolbar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          <button onClick={() => fileInputRef.current.click()} style={primaryBtn}>
-            Upload file
+          <button onClick={() => fileInputRef.current.click()} disabled={uploading} style={{ ...primaryBtn, opacity: uploading ? 0.7 : 1 }}>
+            {uploading ? 'Uploading\u2026' : 'Upload files'}
           </button>
-          <input ref={fileInputRef} type="file" onChange={handleUpload} style={{ display: 'none' }} />
+          <input ref={fileInputRef} type="file" multiple onChange={handleUpload} style={{ display: 'none' }} />
           <button onClick={handleNewFolder} style={secondaryBtn}>
             New folder
           </button>
