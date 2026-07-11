@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getToken } from '../../lib/api';
 import Header from '../../components/Header';
+import FileViewer from '../../components/FileViewer';
 
 function formatSize(bytes) {
   if (bytes === 0) return '\u2014';
@@ -30,6 +31,7 @@ export default function FilesPage() {
   const [error, setError] = useState('');
   const [renaming, setRenaming] = useState(null); // { name }
   const [renameValue, setRenameValue] = useState('');
+  const [viewingFile, setViewingFile] = useState(null); // { name, path }
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -224,10 +226,13 @@ export default function FilesPage() {
                   />
                 ) : (
                   <span
-                    onClick={() => item.isFolder && openFolder(item.name)}
+                    onClick={() => {
+                      if (item.isFolder) openFolder(item.name);
+                      else setViewingFile({ name: item.name, path: joinPath(currentPath, item.name) });
+                    }}
                     style={{
                       flex: 1,
-                      cursor: item.isFolder ? 'pointer' : 'default',
+                      cursor: 'pointer',
                       fontSize: 14
                     }}
                   >
@@ -260,6 +265,15 @@ export default function FilesPage() {
           )}
         </div>
       </main>
+
+      {viewingFile && (
+        <FileViewer
+          path={viewingFile.path}
+          filename={viewingFile.name}
+          onClose={() => setViewingFile(null)}
+          onDownload={() => api.downloadFile(viewingFile.path, viewingFile.name)}
+        />
+      )}
     </div>
   );
 }
