@@ -215,8 +215,8 @@ export default function AdminPage() {
 function Banner({ children, tone }) {
   return (
     <p style={{
-      color: tone === 'danger' ? 'var(--danger)' : 'var(--accent)',
-      background: tone === 'danger' ? 'var(--danger-soft)' : 'var(--accent-soft)',
+      color: tone === 'danger' ? 'var(--danger)' : 'var(--success)',
+      background: tone === 'danger' ? 'var(--danger-soft)' : 'var(--success-soft)',
       padding: '10px 12px',
       borderRadius: 'var(--radius)',
       fontSize: 13,
@@ -262,23 +262,26 @@ const inputStyle = {
 };
 
 const primaryBtn = {
-  background: 'var(--accent)',
-  color: '#fff',
+  background: 'var(--holo-grad)',
+  color: 'var(--ink)',
   border: 'none',
   borderRadius: 'var(--radius)',
-  padding: '9px 16px',
+  padding: '9px 18px',
   fontSize: 13,
-  fontWeight: 500,
-  height: 36
+  fontFamily: "'Baloo 2', sans-serif",
+  fontWeight: 700,
+  height: 38
 };
 
 const secondaryBtn = {
-  background: 'var(--surface)',
+  background: 'transparent',
   color: 'var(--text)',
-  border: '1px solid var(--border)',
+  border: '1.5px solid var(--border)',
   borderRadius: 'var(--radius)',
   padding: '8px 14px',
-  fontSize: 13
+  fontSize: 13,
+  fontFamily: "'Baloo 2', sans-serif",
+  fontWeight: 600
 };
 
 const dangerBtn = {

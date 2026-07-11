@@ -37,7 +37,7 @@ export default function LoginPage() {
         margin: '80px auto 0',
         padding: '0 24px'
       }}>
-        <h1 className="display" style={{ fontSize: 26, fontWeight: 500, marginBottom: 6 }}>
+        <h1 className="display" style={{ fontSize: 28, fontWeight: 600, marginBottom: 6, color: 'var(--ink)' }}>
           Sign in
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>
@@ -86,13 +86,14 @@ export default function LoginPage() {
             style={{
               marginTop: 22,
               width: '100%',
-              background: 'var(--accent)',
-              color: '#fff',
+              background: 'var(--holo-grad)',
+              color: 'var(--ink)',
               border: 'none',
               borderRadius: 'var(--radius)',
               padding: '12px 0',
               fontSize: 14,
-              fontWeight: 500,
+              fontFamily: "'Baloo 2', sans-serif",
+              fontWeight: 700,
               opacity: loading ? 0.7 : 1
             }}
           >

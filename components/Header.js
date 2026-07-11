@@ -2,6 +2,7 @@
 
 import { clearToken } from '../lib/api';
 import { useRouter } from 'next/navigation';
+import LogoMark from './LogoMark';
 
 export default function Header({ showLogout = false }) {
   const router = useRouter();
@@ -9,29 +10,24 @@ export default function Header({ showLogout = false }) {
   return (
     <header style={{
       borderBottom: '1px solid var(--border)',
-      background: 'var(--surface)'
+      background: 'var(--bg)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 10
     }}>
       <div style={{
         maxWidth: 960,
         margin: '0 auto',
-        padding: '20px 28px 16px',
+        padding: '18px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div>
-          <div className="display" style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)' }}>
-            Esperance
-          </div>
-          <svg width="120" height="8" viewBox="0 0 120 8" style={{ marginTop: 2 }}>
-            <path
-              d="M2 6.5 Q 60 -3, 118 6.5"
-              stroke="var(--accent)"
-              strokeWidth="1.5"
-              fill="none"
-              strokeLinecap="round"
-            />
-          </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LogoMark size={22} gradientId="esperance-holo-header" />
+          <span className="display holo-text" style={{ fontSize: 20, fontWeight: 600 }}>
+            esperance
+          </span>
         </div>
         {showLogout && (
           <button
