@@ -22,6 +22,7 @@ export default function AdminPage() {
   // Pending permission edits per user id: { [userId]: { [path]: 'viewer'|'editor' } }
   // '*' is a special path meaning full access
   const [pendingPerms, setPendingPerms] = useState({});
+  const [expandedUsers, setExpandedUsers] = useState(new Set());
 
   useEffect(() => {
     if (!getToken()) router.replace('/login');
@@ -103,6 +104,15 @@ export default function AdminPage() {
     }
   }
 
+  function toggleExpanded(userId) {
+    setExpandedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
+
   async function handleDeleteUser(userId, email) {
     if (!window.confirm(`Remove ${email}? They\u2019ll lose access immediately.`)) return;
     try {
@@ -156,49 +166,80 @@ export default function AdminPage() {
             users.map((u) => {
               const map = pendingPerms[u.id] || {};
               const hasLegacyFullAccess = !!map['*'];
+              const isExpanded = expandedUsers.has(u.id);
+              const grantedCount = Object.keys(map).filter((k) => k !== '*').length;
 
               return (
-                <div key={u.id} style={{ ...cardStyle, marginBottom: 14 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontWeight: 500, fontSize: 14 }}>{u.name || u.email}</div>
-                      <div className="mono" style={{ fontSize: 12 }}>{u.email}</div>
-                    </div>
-                    <button onClick={() => handleDeleteUser(u.id, u.email)} style={dangerBtn}>
-                      Remove
-                    </button>
-                  </div>
-
-                  <div style={{ marginTop: 16 }}>
-                    {hasLegacyFullAccess && (
-                      <p style={{
-                        fontSize: 12, color: 'var(--text-muted)', marginBottom: 10,
-                        background: 'var(--accent-soft)', padding: '8px 10px', borderRadius: 8
+                <div key={u.id} style={{ ...cardStyle, marginBottom: 10, padding: 0 }}>
+                  <div
+                    onClick={() => toggleExpanded(u.id)}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '14px 18px', cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        display: 'inline-block',
+                        transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.15s ease',
+                        color: 'var(--text-muted)',
+                        fontSize: 12
                       }}>
-                        This user currently has full access from before. Pick folders below and
-                        save to replace it with specific permissions.
-                      </p>
-                    )}
-
-                    {folders.length > 0 ? (
-                      folders.map((folder) => (
-                        <PermissionRow
-                          key={folder}
-                          label={folder}
-                          value={map[folder] || 'none'}
-                          onChange={(role) => setPermission(u.id, folder, role)}
-                        />
-                      ))
-                    ) : (
-                      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
-                        No folders exist yet in storage.
-                      </p>
-                    )}
+                        {'\u25B6'}
+                      </span>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: 14 }}>{u.name || u.email}</div>
+                        <div className="mono" style={{ fontSize: 12 }}>{u.email}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {hasLegacyFullAccess ? 'Full access (legacy)' : `${grantedCount} folder${grantedCount === 1 ? '' : 's'}`}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id, u.email); }}
+                        style={dangerBtn}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
 
-                  <button onClick={() => savePermissions(u.id)} style={{ ...secondaryBtn, marginTop: 14 }}>
-                    Save permissions
-                  </button>
+                  {isExpanded && (
+                    <div style={{ padding: '0 18px 18px', borderTop: '1px solid var(--border)' }}>
+                      <div style={{ marginTop: 14 }}>
+                        {hasLegacyFullAccess && (
+                          <p style={{
+                            fontSize: 12, color: 'var(--text-muted)', marginBottom: 10,
+                            background: 'var(--accent-soft)', padding: '8px 10px', borderRadius: 8
+                          }}>
+                            This user currently has full access from before. Pick folders below and
+                            save to replace it with specific permissions.
+                          </p>
+                        )}
+
+                        {folders.length > 0 ? (
+                          folders.map((folder) => (
+                            <PermissionRow
+                              key={folder}
+                              label={folder}
+                              value={map[folder] || 'none'}
+                              onChange={(role) => setPermission(u.id, folder, role)}
+                            />
+                          ))
+                        ) : (
+                          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
+                            No folders exist yet in storage.
+                          </p>
+                        )}
+                      </div>
+
+                      <button onClick={() => savePermissions(u.id)} style={{ ...secondaryBtn, marginTop: 14 }}>
+                        Save permissions
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })

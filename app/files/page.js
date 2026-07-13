@@ -43,7 +43,7 @@ export default function FilesPage() {
     try {
       const data = await api.listFiles(path);
       setItems(data.items);
-      setCanEdit(data.canEdit !== false); // root listing (restricted) doesn't return canEdit — default true there since it's just a folder picker
+      setCanEdit(!!data.canEdit); // backend now always sends this explicitly
     } catch (err) {
       setError('Couldn\u2019t load this folder.');
     } finally {
