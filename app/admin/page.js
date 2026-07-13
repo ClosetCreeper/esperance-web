@@ -113,6 +113,18 @@ export default function AdminPage() {
     });
   }
 
+  async function handleToggleRootAccess(userId, current) {
+    setError('');
+    setMessage('');
+    try {
+      await api.setCanAddRoot(userId, !current);
+      setMessage('Updated.');
+      load();
+    } catch (err) {
+      setError(err.message || 'Couldn\u2019t update that.');
+    }
+  }
+
   async function handleDeleteUser(userId, email) {
     if (!window.confirm(`Remove ${email}? They\u2019ll lose access immediately.`)) return;
     try {
@@ -208,6 +220,24 @@ export default function AdminPage() {
 
                   {isExpanded && (
                     <div style={{ padding: '0 18px 18px', borderTop: '1px solid var(--border)' }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '14px 0', borderBottom: '1px solid var(--border)'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>Add to Home</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                            Can upload files or create folders directly on the front page
+                          </div>
+                        </div>
+                        <RoleButton
+                          active={u.can_add_root}
+                          onClick={() => handleToggleRootAccess(u.id, u.can_add_root)}
+                        >
+                          {u.can_add_root ? 'Enabled' : 'Enable'}
+                        </RoleButton>
+                      </div>
+
                       <div style={{ marginTop: 14 }}>
                         {hasLegacyFullAccess && (
                           <p style={{
