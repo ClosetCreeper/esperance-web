@@ -5,12 +5,12 @@
   --ink: #242A45;
   --ink-soft: #4A5178;
 
-  --holo-pink: #FF9EDB;
-  --holo-violet: #C9A6FF;
-  --holo-sky: #7FCFFF;
-  --holo-mint: #7FF0D0;
-  --holo-gold: #FFE38A;
-  --holo-grad: linear-gradient(115deg, #FF9EDB 0%, #C9A6FF 26%, #7FCFFF 52%, #7FF0D0 74%, #FFE38A 100%);
+  --holo-pink: #FFE9B0;
+  --holo-violet: #FFD97A;
+  --holo-sky: #F5BC4C;
+  --holo-mint: #E8A93D;
+  --holo-gold: #C9862E;
+  --holo-grad: linear-gradient(135deg, #FFF3C4 0%, #FFD766 32%, #F0A93D 68%, #C9862E 100%);
 
   --bg: var(--cream);
   --surface: #FFFFFF;
