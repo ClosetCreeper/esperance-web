@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getToken } from '../../lib/api';
 import Header from '../../components/Header';
+import { FileTypeIcon } from '../../components/FileTypeIcon';
 
 function formatSize(bytes) {
   if (bytes === 0) return '\u2014';
@@ -241,8 +242,8 @@ export default function FilesPage() {
                   gap: 12
                 }}
               >
-                <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>
-                  {item.isFolder ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
+                <span style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileTypeIcon filename={item.name} isFolder={item.isFolder} size={26} />
                 </span>
 
                 {renaming === item.name ? (
