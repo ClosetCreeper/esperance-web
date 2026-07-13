@@ -82,12 +82,6 @@ export default function AdminPage() {
       } else {
         map[path] = role;
       }
-      // Setting/removing full access clears individual folder picks, and vice versa
-      if (path === '*' && role !== 'none') {
-        Object.keys(map).forEach((k) => { if (k !== '*') delete map[k]; });
-      } else if (path !== '*' && role !== 'none') {
-        delete map['*'];
-      }
       next[userId] = map;
       return next;
     });
@@ -98,12 +92,14 @@ export default function AdminPage() {
     setMessage('');
     try {
       const map = pendingPerms[userId] || {};
-      const permissions = Object.entries(map).map(([path, role]) => ({ path, role }));
+      const permissions = Object.entries(map)
+        .filter(([path]) => path !== '*') // full access is no longer settable from this UI
+        .map(([path, role]) => ({ path, role }));
       await api.setUserPermissions(userId, permissions);
       setMessage('Permissions saved.');
       load();
     } catch (err) {
-      setError('Couldn\u2019t save permissions.');
+      setError(err.message || 'Couldn\u2019t save permissions.');
     }
   }
 
@@ -159,7 +155,7 @@ export default function AdminPage() {
           ) : (
             users.map((u) => {
               const map = pendingPerms[u.id] || {};
-              const fullAccessRole = map['*'] || 'none';
+              const hasLegacyFullAccess = !!map['*'];
 
               return (
                 <div key={u.id} style={{ ...cardStyle, marginBottom: 14 }}>
@@ -174,26 +170,26 @@ export default function AdminPage() {
                   </div>
 
                   <div style={{ marginTop: 16 }}>
-                    <PermissionRow
-                      label="Full access (everything)"
-                      value={fullAccessRole}
-                      onChange={(role) => setPermission(u.id, '*', role)}
-                    />
-
-                    {fullAccessRole === 'none' && folders.length > 0 && (
-                      <div style={{ marginTop: 4 }}>
-                        {folders.map((folder) => (
-                          <PermissionRow
-                            key={folder}
-                            label={folder}
-                            value={map[folder] || 'none'}
-                            onChange={(role) => setPermission(u.id, folder, role)}
-                          />
-                        ))}
-                      </div>
+                    {hasLegacyFullAccess && (
+                      <p style={{
+                        fontSize: 12, color: 'var(--text-muted)', marginBottom: 10,
+                        background: 'var(--accent-soft)', padding: '8px 10px', borderRadius: 8
+                      }}>
+                        This user currently has full access from before. Pick folders below and
+                        save to replace it with specific permissions.
+                      </p>
                     )}
 
-                    {fullAccessRole === 'none' && folders.length === 0 && (
+                    {folders.length > 0 ? (
+                      folders.map((folder) => (
+                        <PermissionRow
+                          key={folder}
+                          label={folder}
+                          value={map[folder] || 'none'}
+                          onChange={(role) => setPermission(u.id, folder, role)}
+                        />
+                      ))
+                    ) : (
                       <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
                         No folders exist yet in storage.
                       </p>
