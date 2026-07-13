@@ -191,9 +191,13 @@ export default function FilesPage() {
                 New folder
               </button>
             </>
-          ) : (
+          ) : currentPath ? (
             <span style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>
               View-only access
+            </span>
+          ) : (
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              Open a folder to upload or manage files
             </span>
           )}
         </div>
@@ -279,7 +283,7 @@ export default function FilesPage() {
                       {'\u2193'}
                     </button>
                   )}
-                  {canEdit && (
+                  {(item.role ? item.role === 'editor' : canEdit) && (
                     <>
                       <button onClick={() => startRename(item.name)} style={iconBtn} title="Rename">
                         {'\u270E'}
