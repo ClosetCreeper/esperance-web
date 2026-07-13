@@ -26,6 +26,7 @@ export default function FilesPage() {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
   const [items, setItems] = useState([]);
+  const [canEdit, setCanEdit] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [renaming, setRenaming] = useState(null); // { name }
@@ -42,6 +43,7 @@ export default function FilesPage() {
     try {
       const data = await api.listFiles(path);
       setItems(data.items);
+      setCanEdit(data.canEdit !== false); // root listing (restricted) doesn't return canEdit — default true there since it's just a folder picker
     } catch (err) {
       setError('Couldn\u2019t load this folder.');
     } finally {
@@ -179,13 +181,21 @@ export default function FilesPage() {
 
         {/* Toolbar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          <button onClick={() => fileInputRef.current.click()} disabled={uploading} style={{ ...primaryBtn, opacity: uploading ? 0.7 : 1 }}>
-            {uploading ? 'Uploading\u2026' : 'Upload files'}
-          </button>
-          <input ref={fileInputRef} type="file" multiple onChange={handleUpload} style={{ display: 'none' }} />
-          <button onClick={handleNewFolder} style={secondaryBtn}>
-            New folder
-          </button>
+          {canEdit ? (
+            <>
+              <button onClick={() => fileInputRef.current.click()} disabled={uploading} style={{ ...primaryBtn, opacity: uploading ? 0.7 : 1 }}>
+                {uploading ? 'Uploading\u2026' : 'Upload files'}
+              </button>
+              <input ref={fileInputRef} type="file" multiple onChange={handleUpload} style={{ display: 'none' }} />
+              <button onClick={handleNewFolder} style={secondaryBtn}>
+                New folder
+              </button>
+            </>
+          ) : (
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              View-only access
+            </span>
+          )}
         </div>
 
         {error && (
@@ -269,12 +279,16 @@ export default function FilesPage() {
                       {'\u2193'}
                     </button>
                   )}
-                  <button onClick={() => startRename(item.name)} style={iconBtn} title="Rename">
-                    {'\u270E'}
-                  </button>
-                  <button onClick={() => handleDelete(item.name)} style={{ ...iconBtn, color: 'var(--danger)' }} title="Delete">
-                    {'\u2715'}
-                  </button>
+                  {canEdit && (
+                    <>
+                      <button onClick={() => startRename(item.name)} style={iconBtn} title="Rename">
+                        {'\u270E'}
+                      </button>
+                      <button onClick={() => handleDelete(item.name)} style={{ ...iconBtn, color: 'var(--danger)' }} title="Delete">
+                        {'\u2715'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))

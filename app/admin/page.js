@@ -19,7 +19,8 @@ export default function AdminPage() {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  // Track pending permission edits per user id: { [userId]: Set<path> }
+  // Pending permission edits per user id: { [userId]: { [path]: 'viewer'|'editor' } }
+  // '*' is a special path meaning full access
   const [pendingPerms, setPendingPerms] = useState({});
 
   useEffect(() => {
@@ -39,7 +40,9 @@ export default function AdminPage() {
 
       const initialPerms = {};
       usersRes.users.forEach((u) => {
-        initialPerms[u.id] = new Set(u.permissions);
+        const map = {};
+        u.permissions.forEach((p) => { map[p.path] = p.role; });
+        initialPerms[u.id] = map;
       });
       setPendingPerms(initialPerms);
     } catch (err) {
@@ -70,22 +73,22 @@ export default function AdminPage() {
     }
   }
 
-  function toggleFullAccess(userId, checked) {
+  function setPermission(userId, path, role) {
     setPendingPerms((prev) => {
       const next = { ...prev };
-      next[userId] = checked ? new Set(['*']) : new Set();
-      return next;
-    });
-  }
-
-  function toggleFolder(userId, folder, checked) {
-    setPendingPerms((prev) => {
-      const next = { ...prev };
-      const current = new Set(prev[userId]);
-      current.delete('*'); // toggling a specific folder implies not "full access"
-      if (checked) current.add(folder);
-      else current.delete(folder);
-      next[userId] = current;
+      const map = { ...(prev[userId] || {}) };
+      if (role === 'none') {
+        delete map[path];
+      } else {
+        map[path] = role;
+      }
+      // Setting/removing full access clears individual folder picks, and vice versa
+      if (path === '*' && role !== 'none') {
+        Object.keys(map).forEach((k) => { if (k !== '*') delete map[k]; });
+      } else if (path !== '*' && role !== 'none') {
+        delete map['*'];
+      }
+      next[userId] = map;
       return next;
     });
   }
@@ -94,7 +97,9 @@ export default function AdminPage() {
     setError('');
     setMessage('');
     try {
-      await api.setUserPermissions(userId, Array.from(pendingPerms[userId] || []));
+      const map = pendingPerms[userId] || {};
+      const permissions = Object.entries(map).map(([path, role]) => ({ path, role }));
+      await api.setUserPermissions(userId, permissions);
       setMessage('Permissions saved.');
       load();
     } catch (err) {
@@ -115,16 +120,16 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Header showLogout />
-      <main style={{ maxWidth: 780, margin: '0 auto', padding: '32px 28px 80px' }}>
-        <h1 className="display" style={{ fontSize: 24, fontWeight: 500, marginBottom: 4 }}>
+      <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 28px 80px' }}>
+        <h1 className="display" style={{ fontSize: 24, fontWeight: 600, marginBottom: 4, color: 'var(--ink)' }}>
           Admin
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>
-          Create accounts and control which folders each person can see.
+          Create accounts and control which folders each person can view or edit.
         </p>
 
         {error && <Banner tone="danger">{error}</Banner>}
-        {message && <Banner tone="accent">{message}</Banner>}
+        {message && <Banner tone="success">{message}</Banner>}
 
         {/* New user form */}
         <section style={cardStyle}>
@@ -153,8 +158,9 @@ export default function AdminPage() {
             <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading\u2026</p>
           ) : (
             users.map((u) => {
-              const perms = pendingPerms[u.id] || new Set();
-              const fullAccess = perms.has('*');
+              const map = pendingPerms[u.id] || {};
+              const fullAccessRole = map['*'] || 'none';
+
               return (
                 <div key={u.id} style={{ ...cardStyle, marginBottom: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -167,35 +173,30 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  <div style={{ marginTop: 14 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 10 }}>
-                      <input
-                        type="checkbox"
-                        checked={fullAccess}
-                        onChange={(e) => toggleFullAccess(u.id, e.target.checked)}
-                      />
-                      Full access (sees everything)
-                    </label>
+                  <div style={{ marginTop: 16 }}>
+                    <PermissionRow
+                      label="Full access (everything)"
+                      value={fullAccessRole}
+                      onChange={(role) => setPermission(u.id, '*', role)}
+                    />
 
-                    {!fullAccess && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', paddingLeft: 2 }}>
-                        {folders.length === 0 ? (
-                          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                            No folders exist yet in storage.
-                          </span>
-                        ) : (
-                          folders.map((folder) => (
-                            <label key={folder} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                              <input
-                                type="checkbox"
-                                checked={perms.has(folder)}
-                                onChange={(e) => toggleFolder(u.id, folder, e.target.checked)}
-                              />
-                              {folder}
-                            </label>
-                          ))
-                        )}
+                    {fullAccessRole === 'none' && folders.length > 0 && (
+                      <div style={{ marginTop: 4 }}>
+                        {folders.map((folder) => (
+                          <PermissionRow
+                            key={folder}
+                            label={folder}
+                            value={map[folder] || 'none'}
+                            onChange={(role) => setPermission(u.id, folder, role)}
+                          />
+                        ))}
                       </div>
+                    )}
+
+                    {fullAccessRole === 'none' && folders.length === 0 && (
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
+                        No folders exist yet in storage.
+                      </p>
                     )}
                   </div>
 
@@ -209,6 +210,42 @@ export default function AdminPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+function PermissionRow({ label, value, onChange }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '8px 0', borderBottom: '1px solid var(--border)'
+    }}>
+      <span style={{ fontSize: 13 }}>{label}</span>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <RoleButton active={value === 'none'} onClick={() => onChange('none')}>None</RoleButton>
+        <RoleButton active={value === 'viewer'} onClick={() => onChange('viewer')}>Viewer</RoleButton>
+        <RoleButton active={value === 'editor'} onClick={() => onChange('editor')}>Editor</RoleButton>
+      </div>
+    </div>
+  );
+}
+
+function RoleButton({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontSize: 12,
+        padding: '5px 12px',
+        borderRadius: 999,
+        border: active ? 'none' : '1px solid var(--border)',
+        background: active ? 'var(--holo-grad)' : 'transparent',
+        color: active ? 'var(--ink)' : 'var(--text-muted)',
+        fontFamily: "'Baloo 2', sans-serif",
+        fontWeight: active ? 700 : 600
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
