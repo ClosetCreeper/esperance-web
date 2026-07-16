@@ -46,11 +46,17 @@ export default function FilesPage() {
       setItems(data.items);
       setCanEdit(!!data.canEdit); // backend now always sends this explicitly
     } catch (err) {
+      if (!path) {
+        // The home folder failed to load — this usually means the Pi/API
+        // itself is unreachable, not just a permissions or path issue.
+        router.push('/down');
+        return;
+      }
       setError('Couldn\u2019t load this folder.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     load(currentPath);
