@@ -72,7 +72,7 @@ export default function PublicUploadPage() {
               Thank you!
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>
-              Your file was uploaded to \u201c{folderName}\u201d.
+              Your file was uploaded to "{folderName}".
             </p>
             <button
               onClick={() => setDone(false)}
@@ -91,7 +91,7 @@ export default function PublicUploadPage() {
               Upload to {folderName}
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24 }}>
-              No sign-in needed. Drag a file here, or choose one below.
+              Drag a file here, or choose one below.
             </p>
 
             <label

@@ -249,7 +249,7 @@ export default function FilesPage() {
           }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
-                Anyone with this link can upload to \u201c{fileRequestLink.folderName || 'Home'}\u201d \u2014 no sign-in needed
+                Anyone with this link can upload to "{fileRequestLink.folderName || 'Home'}".
               </div>
               <div className="mono" style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {fileRequestLink.url}
