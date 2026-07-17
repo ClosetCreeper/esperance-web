@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, getToken } from '../../lib/api';
+import { api, getToken, getUser } from '../../lib/api';
 import Header from '../../components/Header';
+
+const ADMIN_EMAIL = 'kehoe.brogna@gmail.com';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -30,7 +32,17 @@ export default function AdminPage() {
   const [expandedUsers, setExpandedUsers] = useState(new Set());
 
   useEffect(() => {
-    if (!getToken()) router.replace('/login');
+    if (!getToken()) {
+      router.replace('/login');
+      return;
+    }
+    // Client-side pre-check for a fast redirect — the backend enforces
+    // this for real on every /admin/* call regardless, so this is just
+    // UX polish, not the actual security boundary.
+    const user = getUser();
+    if (user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      router.replace('/files');
+    }
   }, [router]);
 
   const load = useCallback(async () => {

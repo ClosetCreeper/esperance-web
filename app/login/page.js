@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, setToken } from '../../lib/api';
+import { api, setToken, setUser } from '../../lib/api';
 import Header from '../../components/Header';
 
 export default function LoginPage() {
@@ -19,6 +19,7 @@ export default function LoginPage() {
     try {
       const data = await api.login(email, password);
       setToken(data.token);
+      setUser(data.user);
       router.push(data.mustResetPassword ? '/change-password' : '/files');
     } catch (err) {
       setError(err.message === 'Invalid email or password'
