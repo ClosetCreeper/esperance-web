@@ -14,6 +14,7 @@ export default function PublicUploadPage() {
   const [uploadError, setUploadError] = useState('');
   const [done, setDone] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [uploaderName, setUploaderName] = useState('');
 
   useEffect(() => {
     publicApi.getUploadInfo(token)
@@ -24,17 +25,21 @@ export default function PublicUploadPage() {
 
   const handleFile = useCallback(async (file) => {
     if (!file) return;
+    if (!uploaderName.trim()) {
+      setUploadError('Please enter your name first.');
+      return;
+    }
     setUploading(true);
     setUploadError('');
     try {
-      await publicApi.upload(token, file);
+      await publicApi.upload(token, file, uploaderName.trim());
       setDone(true);
     } catch (err) {
       setUploadError(err.message || 'Upload failed. Try again.');
     } finally {
       setUploading(false);
     }
-  }, [token]);
+  }, [token, uploaderName]);
 
   function handleDrop(e) {
     e.preventDefault();
@@ -90,19 +95,32 @@ export default function PublicUploadPage() {
             <p className="display" style={{ fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>
               Upload to {folderName}
             </p>
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24 }}>
-              Drag a file here, or choose one below.
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
+              No sign-in needed. Enter your name, then drag a file here or choose one below.
             </p>
 
+            <input
+              type="text"
+              value={uploaderName}
+              onChange={(e) => setUploaderName(e.target.value)}
+              placeholder="Your full name"
+              style={{
+                width: '100%', padding: '10px 12px', marginBottom: 16,
+                border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                fontSize: 14, background: 'var(--surface)', color: 'var(--text)', boxSizing: 'border-box'
+              }}
+            />
+
             <label
-              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragOver={(e) => { e.preventDefault(); if (uploaderName.trim()) setDragActive(true); }}
               onDragLeave={() => setDragActive(false)}
               onDrop={handleDrop}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                border: `2px dashed ${dragActive ? 'var(--holo-grad, #E3A02E)' : 'var(--border)'}`,
-                borderColor: dragActive ? '#E3A02E' : 'var(--border)',
-                borderRadius: 12, padding: '40px 20px', cursor: 'pointer',
+                border: `2px dashed ${dragActive ? '#E3A02E' : 'var(--border)'}`,
+                borderRadius: 12, padding: '40px 20px',
+                cursor: uploaderName.trim() ? 'pointer' : 'not-allowed',
+                opacity: uploaderName.trim() ? 1 : 0.5,
                 background: dragActive ? 'rgba(227,160,46,0.06)' : 'transparent',
                 transition: 'border-color 0.15s ease'
               }}
@@ -110,12 +128,16 @@ export default function PublicUploadPage() {
               <input
                 type="file"
                 onChange={(e) => handleFile(e.target.files?.[0])}
-                disabled={uploading}
+                disabled={uploading || !uploaderName.trim()}
                 style={{ display: 'none' }}
               />
               <span style={{ fontSize: 32, marginBottom: 8 }}>{'\u2191'}</span>
               <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                {uploading ? 'Uploading\u2026' : 'Drop a file here or click to choose'}
+                {uploading
+                  ? 'Uploading\u2026'
+                  : uploaderName.trim()
+                    ? 'Drop a file here or click to choose'
+                    : 'Enter your name first'}
               </span>
             </label>
 
