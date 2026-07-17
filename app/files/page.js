@@ -46,6 +46,13 @@ export default function FilesPage() {
       setItems(data.items);
       setCanEdit(!!data.canEdit); // backend now always sends this explicitly
     } catch (err) {
+      const alreadyRedirecting = [
+        'Session expired',
+        'Password reset required',
+        'Admin access only'
+      ].includes(err.message);
+      if (alreadyRedirecting) return; // a more specific redirect is already happening
+
       if (!path) {
         // The home folder failed to load — this usually means the Pi/API
         // itself is unreachable, not just a permissions or path issue.

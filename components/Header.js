@@ -1,11 +1,14 @@
 'use client';
 
-import { clearToken } from '../lib/api';
+import { clearToken, getUser } from '../lib/api';
 import { useRouter } from 'next/navigation';
 import LogoMark from './LogoMark';
 
+const ADMIN_EMAIL = 'kehoe.brogna@gmail.com';
+
 export default function Header({ showLogout = false }) {
   const router = useRouter();
+  const isAdmin = showLogout && getUser()?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   return (
     <header style={{
@@ -30,19 +33,36 @@ export default function Header({ showLogout = false }) {
           </span>
         </div>
         {showLogout && (
-          <button
-            onClick={() => { clearToken(); router.push('/login'); }}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: '8px 14px',
-              fontSize: 13,
-              color: 'var(--text-muted)'
-            }}
-          >
-            Log out
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {isAdmin && (
+              <button
+                onClick={() => router.push('/admin')}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  padding: '8px 14px',
+                  fontSize: 13,
+                  color: 'var(--text-muted)'
+                }}
+              >
+                Admin
+              </button>
+            )}
+            <button
+              onClick={() => { clearToken(); router.push('/login'); }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                padding: '8px 14px',
+                fontSize: 13,
+                color: 'var(--text-muted)'
+              }}
+            >
+              Log out
+            </button>
+          </div>
         )}
       </div>
     </header>
