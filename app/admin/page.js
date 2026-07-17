@@ -17,7 +17,12 @@ export default function AdminPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState('');
+  const [newMustReset, setNewMustReset] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  // Reset-password dialogs, keyed by user id: { newPassword, mustReset }
+  const [resetDialogs, setResetDialogs] = useState({});
+  const [resettingId, setResettingId] = useState(null);
 
   // Pending permission edits per user id: { [userId]: { [path]: 'viewer'|'editor' } }
   // '*' is a special path meaning full access
@@ -61,11 +66,16 @@ export default function AdminPage() {
     setError('');
     setMessage('');
     try {
-      await api.createUser(newEmail, newPassword, newName);
+      const data = await api.createUser(newEmail, newPassword, newName, newMustReset);
       setNewEmail('');
       setNewPassword('');
       setNewName('');
-      setMessage('User created.');
+      setNewMustReset(true);
+      setMessage(
+        data.temporaryPassword
+          ? `User created. Temporary password: ${data.temporaryPassword} (copy this now \u2014 it won\u2019t be shown again)`
+          : 'User created.'
+      );
       load();
     } catch (err) {
       setError(err.message || 'Could not create user.');
@@ -111,6 +121,50 @@ export default function AdminPage() {
       else next.add(userId);
       return next;
     });
+  }
+
+  function openResetDialog(userId) {
+    setResetDialogs((prev) => ({ ...prev, [userId]: { mode: 'generate', newPassword: '', mustReset: true } }));
+  }
+
+  function closeResetDialog(userId) {
+    setResetDialogs((prev) => {
+      const next = { ...prev };
+      delete next[userId];
+      return next;
+    });
+  }
+
+  function updateResetDialog(userId, patch) {
+    setResetDialogs((prev) => ({ ...prev, [userId]: { ...prev[userId], ...patch } }));
+  }
+
+  async function submitReset(userId) {
+    const dialog = resetDialogs[userId];
+    if (!dialog) return;
+    setResettingId(userId);
+    setError('');
+    setMessage('');
+    try {
+      const passwordToSend = dialog.mode === 'set' ? dialog.newPassword : null;
+      if (dialog.mode === 'set' && (!dialog.newPassword || dialog.newPassword.length < 6)) {
+        setError('Password must be at least 6 characters.');
+        setResettingId(null);
+        return;
+      }
+      const data = await api.resetUserPassword(userId, passwordToSend, dialog.mustReset);
+      setMessage(
+        data.generated
+          ? `New password: ${data.password} (copy this now \u2014 it won\u2019t be shown again)`
+          : 'Password updated.'
+      );
+      closeResetDialog(userId);
+      load();
+    } catch (err) {
+      setError(err.message || 'Couldn\u2019t reset that password.');
+    } finally {
+      setResettingId(null);
+    }
   }
 
   async function handleToggleRootAccess(userId, current) {
@@ -159,13 +213,21 @@ export default function AdminPage() {
             <Field label="Email">
               <input type="email" required value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={inputStyle} />
             </Field>
-            <Field label="Password">
-              <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+            <Field label="Password (leave blank to auto-generate)">
+              <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} placeholder="Auto-generate" />
             </Field>
             <button type="submit" disabled={creating} style={primaryBtn}>
               {creating ? 'Creating\u2026' : 'Create user'}
             </button>
           </form>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginTop: 14, color: 'var(--text-muted)' }}>
+            <input
+              type="checkbox"
+              checked={newMustReset}
+              onChange={(e) => setNewMustReset(e.target.checked)}
+            />
+            Force them to set their own password on first login
+          </label>
         </section>
 
         {/* User list */}
@@ -206,6 +268,14 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {u.must_reset_password && (
+                        <span style={{
+                          fontSize: 11, color: 'var(--danger)', background: 'var(--danger-soft)',
+                          padding: '3px 8px', borderRadius: 999, fontWeight: 500
+                        }}>
+                          Reset pending
+                        </span>
+                      )}
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                         {hasLegacyFullAccess ? 'Full access (legacy)' : `${grantedCount} folder${grantedCount === 1 ? '' : 's'}`}
                       </span>
@@ -237,6 +307,77 @@ export default function AdminPage() {
                           {u.can_add_root ? 'Enabled' : 'Enable'}
                         </RoleButton>
                       </div>
+
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '14px 0', borderBottom: '1px solid var(--border)'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>Password</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                            {u.must_reset_password ? 'This user must set a new password on next login' : 'Set or generate a new password'}
+                          </div>
+                        </div>
+                        {!resetDialogs[u.id] && (
+                          <RoleButton active={false} onClick={() => openResetDialog(u.id)}>
+                            Reset password
+                          </RoleButton>
+                        )}
+                      </div>
+
+                      {resetDialogs[u.id] && (
+                        <div style={{
+                          padding: '14px 0', borderBottom: '1px solid var(--border)',
+                          display: 'flex', flexDirection: 'column', gap: 10
+                        }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <RoleButton
+                              active={resetDialogs[u.id].mode === 'generate'}
+                              onClick={() => updateResetDialog(u.id, { mode: 'generate' })}
+                            >
+                              Generate one
+                            </RoleButton>
+                            <RoleButton
+                              active={resetDialogs[u.id].mode === 'set'}
+                              onClick={() => updateResetDialog(u.id, { mode: 'set' })}
+                            >
+                              Set a password
+                            </RoleButton>
+                          </div>
+
+                          {resetDialogs[u.id].mode === 'set' && (
+                            <input
+                              type="text"
+                              placeholder="New password"
+                              value={resetDialogs[u.id].newPassword}
+                              onChange={(e) => updateResetDialog(u.id, { newPassword: e.target.value })}
+                              style={inputStyle}
+                            />
+                          )}
+
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+                            <input
+                              type="checkbox"
+                              checked={resetDialogs[u.id].mustReset}
+                              onChange={(e) => updateResetDialog(u.id, { mustReset: e.target.checked })}
+                            />
+                            Force them to set their own password on next login
+                          </label>
+
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={() => submitReset(u.id)}
+                              disabled={resettingId === u.id}
+                              style={{ ...primaryBtn, height: 34, padding: '0 14px' }}
+                            >
+                              {resettingId === u.id ? 'Saving\u2026' : 'Save'}
+                            </button>
+                            <button onClick={() => closeResetDialog(u.id)} style={{ ...secondaryBtn, padding: '7px 14px' }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       <div style={{ marginTop: 14 }}>
                         {hasLegacyFullAccess && (
