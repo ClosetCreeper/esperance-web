@@ -82,6 +82,9 @@ export default function FilesPage() {
   }
 
   const [uploading, setUploading] = useState(false);
+  const [fileRequestLink, setFileRequestLink] = useState(null); // { url, folderName }
+  const [creatingLink, setCreatingLink] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   async function handleUpload(e) {
     const files = Array.from(e.target.files || []);
@@ -110,6 +113,25 @@ export default function FilesPage() {
           : `${failCount} of ${files.length} file${files.length > 1 ? 's' : ''} failed to upload.`
       );
     }
+  }
+
+  async function handleCreateFileRequest() {
+    setCreatingLink(true);
+    setCopied(false);
+    try {
+      const data = await api.createFileRequest(currentPath);
+      const url = `${window.location.origin}/upload/${data.token}`;
+      setFileRequestLink({ url, folderName: data.folderName });
+    } catch (err) {
+      setError('Couldn\u2019t create a file request link.');
+    } finally {
+      setCreatingLink(false);
+    }
+  }
+
+  function copyFileRequestLink() {
+    navigator.clipboard.writeText(fileRequestLink.url);
+    setCopied(true);
   }
 
   async function handleNewFolder() {
@@ -194,7 +216,7 @@ export default function FilesPage() {
         </div>
 
         {/* Toolbar */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
           {canEdit ? (
             <>
               <button onClick={() => fileInputRef.current.click()} disabled={uploading} style={{ ...primaryBtn, opacity: uploading ? 0.7 : 1 }}>
@@ -203,6 +225,9 @@ export default function FilesPage() {
               <input ref={fileInputRef} type="file" multiple onChange={handleUpload} style={{ display: 'none' }} />
               <button onClick={handleNewFolder} style={secondaryBtn}>
                 New folder
+              </button>
+              <button onClick={handleCreateFileRequest} disabled={creatingLink} style={secondaryBtn}>
+                {creatingLink ? 'Creating link\u2026' : 'Create File Request'}
               </button>
             </>
           ) : currentPath ? (
@@ -215,6 +240,31 @@ export default function FilesPage() {
             </span>
           )}
         </div>
+
+        {fileRequestLink && (
+          <div style={{
+            border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            background: 'var(--surface)', padding: '14px 16px', marginBottom: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+                Anyone with this link can upload to \u201c{fileRequestLink.folderName || 'Home'}\u201d \u2014 no sign-in needed
+              </div>
+              <div className="mono" style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {fileRequestLink.url}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button onClick={copyFileRequestLink} style={secondaryBtn}>
+                {copied ? 'Copied!' : 'Copy link'}
+              </button>
+              <button onClick={() => setFileRequestLink(null)} style={{ ...secondaryBtn, padding: '9px 12px' }}>
+                {'\u2715'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <p style={{
