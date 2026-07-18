@@ -96,7 +96,7 @@ export default function PublicUploadPage() {
               Upload to {folderName}
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
-              No sign-in needed. Enter your name, then drag a file here or choose one below.
+              Drag a file here or choose one below.
             </p>
 
             <input
