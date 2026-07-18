@@ -44,7 +44,7 @@ export default function SignUpPage() {
           Create your account
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 28 }}>
-          You won't have access to any files until an admin grants it — this just gets your account set up.
+          Please fill out the information below!
         </p>
 
         <form onSubmit={handleSubmit}>
